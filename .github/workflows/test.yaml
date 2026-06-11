@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: azure/setup-helm@v4
       - run: helm dependency update chart/
-      - run: helm plugin install https://github.com/helm-unittest/helm-unittest
+      - run: helm plugin install https://github.com/helm-unittest/helm-unittest --verify=false
       - run: helm unittest chart/
 
       - name: prod example disables bundled datastores
