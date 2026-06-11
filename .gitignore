@@ -1,0 +1,10 @@
+# Helm
+chart/charts/
+*.tgz
+
+# Local
+.cache/
+CLAUDE.md
+
+# Internal planning/scaffolding - not part of the shipped pack
+docs/superpowers/

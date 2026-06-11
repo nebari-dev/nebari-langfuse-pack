@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# Validate pack-metadata.yaml against the published schema.
+# If the schema is not yet published (non-200 response), fall back to a
+# basic YAML-parse + required-keys check and warn rather than failing.
+set -euo pipefail
+
+SCHEMA_URL="https://raw.githubusercontent.com/nebari-dev/software-pack-dashboard/main/schema/pack-metadata.schema.json"
+METADATA_FILE="${1:-pack-metadata.yaml}"
+
+code=$(curl -sL -o /tmp/pmschema.json -w '%{http_code}' "$SCHEMA_URL")
+
+if [ "$code" = "200" ]; then
+    echo "Schema published; validating strictly with check-jsonschema."
+    check-jsonschema --schemafile /tmp/pmschema.json "$METADATA_FILE"
+else
+    echo "::warning::pack-metadata schema not published (HTTP $code) - falling back to basic checks"
+    python3 - "$METADATA_FILE" <<'PY'
+import sys, yaml
+
+path = sys.argv[1]
+d = yaml.safe_load(open(path))
+
+required = ["name", "level", "owner", "nebariapp_integration", "scope"]
+missing = [k for k in required if k not in d]
+assert not missing, f"missing required keys: {missing}"
+
+valid_levels = {"experimental", "alpha", "beta", "ga"}
+assert d["level"] in valid_levels, f"bad level: {d['level']} (must be one of {valid_levels})"
+
+assert "standalone-supported" in d.get("scope", {}), "scope.standalone-supported missing"
+
+print(f"pack-metadata basic checks passed: {d['name']} ({d['level']})")
+PY
+fi

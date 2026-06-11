@@ -1,0 +1,65 @@
+# ArgoCD Application for deploying nebari-langfuse via GitOps.
+#
+# IMPORTANT - GitOps requires a pre-created secret. ArgoCD's repo-server renders Helm
+# with no cluster access, so the chart's lookup-based secret generator (secrets.generate:
+# true) emits NEW random values on every sync, which rotates langfuse-secrets and breaks
+# datastore auth. Set secrets.generate: false and pre-create the secret ONCE:
+#
+#   kubectl create namespace langfuse
+#   kubectl label namespace langfuse nebari.dev/managed=true
+#   kubectl -n langfuse create secret generic langfuse-secrets \
+#     --from-literal=salt=$(openssl rand -hex 16) \
+#     --from-literal=encryptionKey=$(openssl rand -hex 32) \
+#     --from-literal=nextauth-secret=$(openssl rand -hex 32) \
+#     --from-literal=postgres-password=$(openssl rand -hex 16) \
+#     --from-literal=redis-password=$(openssl rand -hex 16) \
+#     --from-literal=clickhouse-password=$(openssl rand -hex 16) \
+#     --from-literal=root-user=langfuse \
+#     --from-literal=root-password=$(openssl rand -hex 16)
+#
+# Use hex values (no special characters) to avoid URL-encoding issues in connection strings.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: langfuse
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://nebari-dev.github.io/helm-repository
+    chart: nebari-langfuse
+    targetRevision: 0.1.0
+    helm:
+      releaseName: langfuse
+      valuesObject:
+        nebariapp:
+          enabled: true
+          hostname: langfuse.nebari.example.com   # CHANGE ME
+          auth:
+            enabled: true
+          landingPage:
+            enabled: true
+        secrets:
+          generate: false   # GitOps: supply langfuse-secrets out-of-band (see header)
+        langfuse:
+          langfuse:
+            nextauth:
+              url: https://langfuse.nebari.example.com   # MUST equal nebariapp.hostname
+            auth:
+              providers:
+                keycloak:
+                  issuer: "https://keycloak.nebari.example.com/realms/nebari"   # CHANGE ME
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: langfuse
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    managedNamespaceMetadata:
+      labels:
+        # Required for the nebari-operator to reconcile the NebariApp in this namespace.
+        nebari.dev/managed: "true"

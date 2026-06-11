@@ -1,0 +1,20 @@
+name: E2E
+on:
+  pull_request: { branches: [main] }
+  workflow_dispatch: {}
+jobs:
+  e2e-standalone:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - uses: helm/kind-action@v1
+        with:
+          cluster_name: nebari-langfuse-e2e
+      - name: install + black-box test (standalone)
+        run: |
+          helm dependency update chart/
+          helm install langfuse chart/ -f tests/e2e/ci-values.yaml --wait --timeout 15m
+          kubectl port-forward svc/langfuse-web 3000:3000 &
+          for i in $(seq 1 40); do curl -sf http://localhost:3000/api/public/health && break; sleep 5; done
+          BASE_URL=http://localhost:3000 MODE=standalone bash tests/e2e/run.sh

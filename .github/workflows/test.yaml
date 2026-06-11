@@ -1,0 +1,64 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  unittest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - run: helm dependency update chart/
+      - run: helm plugin install https://github.com/helm-unittest/helm-unittest
+      - run: helm unittest chart/
+
+      - name: prod example disables bundled datastores
+        run: |
+          out=$(helm template langfuse chart/ -f examples/prod-external-datastores.yaml \
+            | grep -E 'app.kubernetes.io/name: (postgresql|clickhouse|valkey|redis|minio)' | sort -u || true)
+          test -z "$out" || { echo "unexpected bundled datastore workloads:"; echo "$out"; exit 1; }
+
+      - name: bundled datastores use bitnamilegacy images (no paid bitnami, no :latest)
+        run: |
+          render=$(helm template langfuse chart/)
+          echo "$render" | grep -E 'image: .*docker.io/bitnami/' && { echo "found non-legacy bitnami image"; exit 1; } || echo "all bitnami images are legacy"
+          echo "$render" | grep -E 'image: .*:latest' && { echo "found :latest image tag"; exit 1; } || echo "no :latest tags"
+
+      - name: renders with NebariApp enabled AND disabled
+        run: |
+          helm template langfuse chart/ --set nebariapp.enabled=false >/dev/null
+          helm template langfuse chart/ --set nebariapp.enabled=true --set nebariapp.hostname=langfuse.test --set nebariapp.auth.enabled=true >/dev/null
+          echo "both render"
+
+      - name: wiring assertions
+        run: bash chart/tests/values-wiring.sh
+
+  kubeconform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - run: helm dependency update chart/
+
+      - name: install kubeconform
+        run: |
+          curl -sSL -o /tmp/kc.tgz https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz
+          tar xzf /tmp/kc.tgz -C /usr/local/bin kubeconform
+
+      - name: kubeconform (standard resources; CRDs ignored)
+        run: |
+          helm template langfuse chart/ --set nebariapp.enabled=true --set nebariapp.hostname=langfuse.test \
+            | kubeconform -strict -ignore-missing-schemas -summary
+
+  pack-metadata:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+      - run: pip install check-jsonschema pyyaml
+      - name: validate pack-metadata.yaml (tolerant of unpublished schema)
+        run: bash chart/tests/check-pack-metadata.sh pack-metadata.yaml

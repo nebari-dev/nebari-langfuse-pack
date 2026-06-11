@@ -1,0 +1,63 @@
+# Production: external managed datastores, pre-created secrets (no in-cluster generation).
+nebariapp:
+  enabled: true
+  hostname: langfuse.example.com   # CHANGE ME
+  auth:
+    enabled: true
+  landingPage:
+    enabled: true
+
+# Supply langfuse-secrets and langfuse-oidc-client yourself (GitOps/ArgoCD-friendly).
+secrets:
+  generate: false
+
+langfuse:
+  langfuse:
+    nextauth:
+      url: https://langfuse.example.com
+    auth:
+      providers:
+        keycloak:
+          issuer: "https://keycloak.example.com/realms/nebari"   # CHANGE ME
+
+  postgresql:
+    deploy: false
+    host: my-postgres.example.com
+    port: 5432
+    auth:
+      username: langfuse
+      database: langfuse
+      existingSecret: langfuse-secrets
+      secretKeys:
+        userPasswordKey: postgres-password
+        adminPasswordKey: postgres-password
+
+  clickhouse:
+    deploy: false
+    host: my-clickhouse.example.com
+    auth:
+      existingSecret: langfuse-secrets
+      existingSecretKey: clickhouse-password
+
+  redis:
+    deploy: false
+    host: my-redis.example.com
+    port: 6379
+    auth:
+      existingSecret: langfuse-secrets
+      existingSecretPasswordKey: redis-password
+
+  s3:
+    deploy: false
+    bucket: langfuse
+    region: us-east-1
+    endpoint: https://s3.us-east-1.amazonaws.com
+    forcePathStyle: false
+    accessKeyId:
+      secretKeyRef:
+        name: langfuse-secrets
+        key: root-user
+    secretAccessKey:
+      secretKeyRef:
+        name: langfuse-secrets
+        key: root-password

@@ -1,0 +1,20 @@
+# Deploy Langfuse on a Nebari cluster with Keycloak SSO and bundled datastores.
+# helm install langfuse <repo>/nebari-langfuse -f examples/nebari-values.yaml \
+#   --set nebariapp.hostname=langfuse.<your-domain>
+nebariapp:
+  enabled: true
+  hostname: langfuse.nebari.example.com   # CHANGE ME
+  auth:
+    enabled: true
+  landingPage:
+    enabled: true
+
+langfuse:
+  langfuse:
+    nextauth:
+      url: https://langfuse.nebari.example.com   # MUST equal nebariapp.hostname
+    auth:
+      providers:
+        keycloak:
+          # clientId/clientSecret come from the operator-provisioned secret (defaults in values.yaml).
+          issuer: "https://keycloak.nebari.example.com/realms/nebari"   # CHANGE ME

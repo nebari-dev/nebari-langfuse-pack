@@ -1,0 +1,29 @@
+# Lightweight standalone deployment for CI e2e (no operator, smaller datastores).
+nebariapp:
+  enabled: false
+langfuse:
+  langfuse:
+    nextauth:
+      url: http://localhost:3000
+    auth:
+      disableUsernamePassword: false
+      providers: {}
+  clickhouse:
+    replicaCount: 1
+    persistence:
+      enabled: false
+    zookeeper:
+      replicaCount: 1
+      persistence:
+        enabled: false
+  postgresql:
+    primary:
+      persistence:
+        enabled: false
+  redis:
+    primary:
+      persistence:
+        enabled: false
+  s3:
+    persistence:
+      enabled: false

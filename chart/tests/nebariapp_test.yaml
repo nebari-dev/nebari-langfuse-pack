@@ -1,0 +1,63 @@
+suite: nebariapp
+templates:
+  - templates/nebariapp.yaml
+tests:
+  - it: does not render when disabled
+    set:
+      nebariapp.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: renders with pinned name, app-native auth, and service when enabled
+    set:
+      nebariapp.enabled: true
+      nebariapp.hostname: langfuse.test
+      nebariapp.auth.enabled: true
+    asserts:
+      - isKind:
+          of: NebariApp
+      - equal:
+          path: metadata.name
+          value: langfuse
+      - equal:
+          path: spec.hostname
+          value: langfuse.test
+      - equal:
+          path: spec.service.name
+          value: langfuse-web
+      - equal:
+          path: spec.service.port
+          value: 3000
+      - equal:
+          path: spec.auth.enforceAtGateway
+          value: false
+      - equal:
+          path: spec.auth.redirectURI
+          value: /api/auth/callback/keycloak
+      - equal:
+          path: spec.routing.routes[0].pathPrefix
+          value: /
+      - equal:
+          path: spec.routing.tls.enabled
+          value: true
+  - it: renders the landingPage block when enabled
+    set:
+      nebariapp.enabled: true
+      nebariapp.hostname: langfuse.test
+      nebariapp.landingPage.enabled: true
+    asserts:
+      - equal:
+          path: spec.landingPage.displayName
+          value: Langfuse
+      - equal:
+          path: spec.landingPage.healthCheck.enabled
+          value: true
+      - equal:
+          path: spec.landingPage.healthCheck.path
+          value: /api/public/health
+  - it: fails when enabled without a hostname
+    set:
+      nebariapp.enabled: true
+    asserts:
+      - failedTemplate:
+          errorMessage: "nebariapp.hostname is required when nebariapp.enabled is true"

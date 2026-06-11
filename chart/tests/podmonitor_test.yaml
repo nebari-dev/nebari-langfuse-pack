@@ -1,0 +1,14 @@
+suite: podmonitor
+templates:
+  - templates/podmonitor.yaml
+tests:
+  - it: does not render when disabled (default)
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: renders a PodMonitor when enabled
+    set:
+      metrics.podMonitor.enabled: true
+    asserts:
+      - isKind:
+          of: PodMonitor

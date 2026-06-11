@@ -1,0 +1,13 @@
+# Local/standalone deploy without Nebari. Email/password auth; bundled datastores.
+# helm install langfuse <repo>/nebari-langfuse -f examples/standalone-values.yaml
+# kubectl port-forward svc/langfuse-web 3000:3000
+nebariapp:
+  enabled: false
+
+langfuse:
+  langfuse:
+    nextauth:
+      url: http://localhost:3000
+    auth:
+      disableUsernamePassword: false   # allow email/password locally
+      providers: {}                    # no SSO

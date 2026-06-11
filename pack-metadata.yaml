@@ -1,0 +1,13 @@
+# Nebari software pack metadata, consumed by software-pack-dashboard.
+# Schema: https://raw.githubusercontent.com/nebari-dev/software-pack-dashboard/main/schema/pack-metadata.schema.json
+name: nebari-langfuse
+level: beta
+owner: dcmcand
+product_owner: dcmcand
+nebariapp_integration: full
+scope:
+  standalone-supported: yes
+# last_promoted_at and last_promoted_pr are set on the promotion PR merge; this pack
+# has not yet been promoted (new repo) so they are omitted here. Include them when
+# the Alpha -> Beta promotion PR merges.
+demo_notes: "App-native Keycloak SSO; set the Keycloak issuer and hostname in values. Bundled datastores use frozen bitnamilegacy images - use external datastores for production."
