@@ -23,8 +23,8 @@ with justification and must be resolved as follow-up actions before or at promot
 |------|-------|--------|---------------|
 | Repo is created from the software pack template | `[E]` | N/A - effectively satisfied | The pack was not forked from a template repo (none existed at authoring time) but mirrors the template structure exactly: `chart/`, `examples/`, `tests/`, `docs/`, `dev/`, `.github/workflows/`, `CODEOWNERS`, `pack-metadata.yaml`, `LICENSE`. All template-required files are present. |
 | `CODEOWNERS` names at least one accountable engineer | `[E]` | done | `CODEOWNERS` at repo root: `* @dcmcand` (this commit). |
-| `pack-metadata.yaml` exists, validates against schema, declares level + owner + scope flags | `[E]` | done (schema validation: see note) | `pack-metadata.yaml` at repo root (this commit). `level: beta`, `owner: dcmcand`, `scope.standalone-supported: yes`. Schema URL returned 404 at authoring time (dashboard schema not yet published); CI `check-jsonschema` step (Task 11) is the authoritative validation gate. |
-| Pack is listed in `nebari-dev/software-pack-dashboard/tracked-packs.yaml` | `[E]` | EXTERNAL - separate repo | Must be added in a follow-up PR to `nebari-dev/software-pack-dashboard`. Cannot be done in this repo. |
+| `pack-metadata.yaml` exists, validates against schema, declares level + owner + scope flags | `[E]` | done | `pack-metadata.yaml` at repo root. `level: beta`, `owner: dcmcand`, `scope.standalone-supported: yes`. Validated with `check-jsonschema` against the published dashboard schema (2026-06-12). The schema repo is private, so unauthenticated CI falls back to a required-keys check kept in sync with the schema. |
+| Pack is listed in `nebari-dev/software-pack-dashboard/tracked-packs.yaml` | `[E]` | done | Added via software-pack-dashboard#2 (merged 2026-06-12). |
 | README explains what the pack does and who it is for | `[E]` | covered by Task 9 | `README.md` authored in Task 9. |
 | `product_owner` field is populated in `pack-metadata.yaml` | `[B]` | done | `product_owner: dcmcand` in `pack-metadata.yaml` (this commit). |
 
@@ -102,8 +102,8 @@ with justification and must be resolved as follow-up actions before or at promot
 
 | Item | Level | Status | Where / Notes |
 |------|-------|--------|---------------|
-| Chart is publishable to `nebari-dev.github.io/helm-repository` | `[B]` | covered by Task 11 | `.github/workflows/release.yaml` configures chart-releaser for `nebari-dev.github.io/helm-repository`. |
-| Release workflow is configured and at least one pre-1.0 release has been published | `[B]` | workflow: covered by Task 11; actual publish: EXTERNAL - requires a tag push | The `release.yaml` workflow is configured in Task 11. An actual published release requires pushing a version tag (`v0.1.0`) to trigger it - this happens at release time, outside the code tasks. Tracked as a follow-up. |
+| Chart is publishable to `nebari-dev.github.io/helm-repository` | `[B]` | done | Chart source added to `nebari-dev/helm-repository` `charts/nebari-langfuse/` (helm-repository#50, merged 2026-06-12); published to the central Helm index and `oci://quay.io/nebari/charts/nebari-langfuse`. |
+| Release workflow is configured and at least one pre-1.0 release has been published | `[B]` | done | `nebari-langfuse-0.1.0` released in this repo (GitHub release + chart tgz) and published through the central helm-repository release workflow. |
 | `appVersion` in `Chart.yaml` matches the upstream application version being wrapped | `[B]` | done | `chart/Chart.yaml` `appVersion: "3.179.1"` matches `langfuse/langfuse` chart `1.5.34` which deploys Langfuse `3.179.1` (Task 1). |
 
 ---
@@ -130,16 +130,16 @@ with justification and must be resolved as follow-up actions before or at promot
 
 ## Summary of External / Human Items (cannot be completed in this repo)
 
-These must be resolved before the Alpha -> Beta promotion PR is merged:
-
-1. **Listed in `software-pack-dashboard/tracked-packs.yaml`** - open a PR in
-   `nebari-dev/software-pack-dashboard` to add `nebari-langfuse`.
-2. **At least one pre-1.0 release actually published** - push a version tag (`v0.1.0`) to
-   trigger the `release.yaml` workflow after CI is green.
-3. **Pre-sales "demoable without engineering" sign-off** - pre-sales engineer must run the
-   demo end-to-end and sign off in the promotion PR.
-4. **Pre-sales rep + tech lead promotion-PR approvals** - required reviewers per the maturity
-   model promotion process table.
+1. **Listed in `software-pack-dashboard/tracked-packs.yaml`** - DONE
+   (software-pack-dashboard#2, merged 2026-06-12).
+2. **At least one pre-1.0 release actually published** - DONE: `nebari-langfuse-0.1.0`
+   released in this repo and published via `nebari-dev/helm-repository`
+   (helm-repository#50; Helm index + quay.io OCI verified installable).
+3. **Pre-sales "demoable without engineering" sign-off** - OUTSTANDING: pre-sales engineer
+   must run the demo end-to-end and sign off.
+4. **Pre-sales rep + tech lead promotion-PR approvals** - OUTSTANDING: required reviewers
+   per the maturity model promotion process table. The pack is published at `level: beta`
+   with these sign-offs accepted as outstanding by the pack owner.
 
 ## Summary of "Covered by Task N" Items
 
